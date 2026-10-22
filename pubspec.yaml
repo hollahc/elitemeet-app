@@ -94,8 +94,9 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   # Purple icon on both platforms: iOS uses icon_purple.png as is (opaque),
-  # Android's adaptive icon is the white mark on the same purple.
+  # Android's adaptive icon is the white mark on the same purple. #1A1230 is
+  # the site's dark purple (--popover: menus, bottom sheets).
   image_path: "assets/branding/icon_purple.png"
   remove_alpha_ios: true
-  adaptive_icon_background: "#7C3AED"
+  adaptive_icon_background: "#1A1230"
   adaptive_icon_foreground: "assets/branding/icon_foreground.png"

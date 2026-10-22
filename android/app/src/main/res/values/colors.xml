@@ -5,5 +5,5 @@
          real EliteMeet brand color. See docs/SETUP.md, Section 61. -->
     <color name="notification_accent">#B8860B</color>
     <color name="splash_background">#FFFFFFFF</color>
-	<color name="ic_launcher_background">#7C3AED</color>
+	<color name="ic_launcher_background">#1A1230</color>
 </resources>
