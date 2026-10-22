@@ -1,0 +1,96 @@
+name: elitemeet_app
+description: "EliteMeet native mobile wrapper for elitemeet.net"
+publish_to: 'none'
+version: 1.0.1+9
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # WebView
+  webview_flutter: ^4.8.0
+  webview_flutter_android: ^4.14.1
+  webview_flutter_wkwebview: ^3.13.0
+
+  # Firebase / Push
+  firebase_core: ^4.14.0
+  firebase_messaging: ^16.6.0
+  flutter_local_notifications: ^22.3.0
+
+  # Billing
+  in_app_purchase: ^3.2.0
+  in_app_purchase_android: ^0.5.3
+  in_app_purchase_storekit: ^0.4.12
+
+  # Connectivity / network state
+  connectivity_plus: ^7.3.1
+
+  # App/device info
+  package_info_plus: ^10.2.1
+  device_info_plus: ^13.2.0
+
+  # Permissions (notifications, camera, photos, location)
+  permission_handler: ^13.0.2
+
+  # Deep links
+  app_links: ^7.2.1
+
+  # Native splash screen generation (dev-time tool, also runtime asset)
+  flutter_native_splash: ^2.4.1
+
+  # Launcher icon generation (dev-time tool)
+  flutter_launcher_icons: ^0.14.1
+
+  # File chooser support goes through webview_flutter's native file selector
+  # hooks; image_picker is used as a fallback/bridge target if the site's
+  # picker needs a native camera capture path.
+  image_picker: ^1.1.2
+
+  # Secure token/local storage (for caching FCM token / last-known auth hint,
+  # never for passwords)
+  shared_preferences: ^2.3.2
+
+  # URL launching for external links (tel:, mailto:, maps, social, browser)
+  url_launcher: ^6.3.0
+
+  cupertino_icons: ^1.0.8
+  flutter_callkit_incoming: ^3.1.6
+  sign_in_with_apple: ^8.2.0
+  crypto: ^3.0.7
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/branding/
+
+# --- flutter_native_splash config (generated via `dart run flutter_native_splash:create`) ---
+flutter_native_splash:
+  color: "#091123"
+  color_dark: "#091123"
+  image: assets/branding/splash_logo_padded.png
+  image_dark: assets/branding/splash_logo_padded.png
+  android_12:
+    # 1152px image; Android 12+ shows only the centre circle, so the logo is padded to fit inside it.
+    image: assets/branding/splash_android12.png
+    image_dark: assets/branding/splash_android12.png
+    color: "#091123"
+    color_dark: "#091123"
+  android: true
+  ios: true
+
+# --- flutter_launcher_icons config (generated via `dart run flutter_launcher_icons`) ---
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/branding/icon_purple.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#7C3AED"
+  adaptive_icon_foreground: "assets/branding/icon_foreground.png"

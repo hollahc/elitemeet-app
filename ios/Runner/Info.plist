@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>CFBundleDevelopmentRegion</key>
+		<string>en</string>
+		<key>CFBundleDisplayName</key>
+		<string>EliteMeet</string>
+		<key>CFBundleExecutable</key>
+		<string>$(EXECUTABLE_NAME)</string>
+		<key>CFBundleIdentifier</key>
+		<string>net.elitemeet.app</string>
+		<key>CFBundleInfoDictionaryVersion</key>
+		<string>6.0</string>
+		<key>CFBundleName</key>
+		<string>elitemeet_app</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>$(FLUTTER_BUILD_NAME)</string>
+		<key>CFBundleVersion</key>
+		<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<key>LSRequiresIPhoneOS</key>
+		<true/>
+		<!-- Section 5: portrait lock -->
+		<key>UISupportedInterfaceOrientations</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+		</array>
+		<key>UISupportedInterfaceOrientations~ipad</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+		</array>
+		<key>UIStatusBarHidden</key>
+		<false/>
+		<key>UIViewControllerBasedStatusBarAppearance</key>
+		<true/>
+		<key>UILaunchStoryboardName</key>
+		<string>LaunchScreen</string>
+		<key>UIMainStoryboardFile</key>
+		<string>Main</string>
+		<!-- Section 62: specific, non-generic usage strings — Apple review
+	     flags vague copy like "This app needs camera access". Replace
+	     these with EliteMeet's actual copy if different, but keep them
+	     specific to what the feature is for. -->
+		<key>NSCameraUsageDescription</key>
+		<string>EliteMeet uses your camera for video calls with your matches and to take profile photos.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>EliteMeet uses your microphone for voice and video calls with your matches.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>EliteMeet needs access to your photo library so you can choose a profile photo.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>EliteMeet can save photos to your library when you download an image from the app.</string>
+		<!-- Section 70: geolocation, confirmed in use for nearby-matches. -->
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>EliteMeet uses your location to show nearby matches.</string>
+		<!-- Section 10: push notifications -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+		</array>
+		<key>FirebaseAppDelegateProxyEnabled</key>
+		<false/>
+		<!-- Section 6: WebView / networking. cleartext is blocked by default
+	     (no NSAllowsArbitraryLoads) — HTTPS-only per Section 25. -->
+		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<true/>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
+		<true/>
+	</dict>
+</plist>
