@@ -1,7 +1,7 @@
 name: elitemeet_app
 description: "EliteMeet native mobile wrapper for elitemeet.net"
 publish_to: 'none'
-version: 1.0.1+9
+version: 1.0.1+10
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -58,6 +58,11 @@ dependencies:
 
   cupertino_icons: ^2.0.0
   flutter_callkit_incoming: ^3.1.6
+
+  # Native Sign in with Apple (iOS), handed to the site over the JS bridge;
+  # crypto hashes the nonce Apple signs into the ID token.
+  sign_in_with_apple: ^8.2.0
+  crypto: ^3.0.7
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -71,17 +76,16 @@ flutter:
 
 # --- flutter_native_splash config (generated via `dart run flutter_native_splash:create`) ---
 flutter_native_splash:
-  color: "#0D0D0D"
-  color_dark: "#0D0D0D"
-  image: assets/branding/splash_logo.png
-  image_dark: assets/branding/splash_logo.png
-  # Android 12+ crops the splash icon to a circle 2/3 of the image wide; the
-  # regular logo pokes out of it, so this copy is scaled down to fit.
+  color: "#091123"
+  color_dark: "#091123"
+  image: assets/branding/splash_logo_padded.png
+  image_dark: assets/branding/splash_logo_padded.png
   android_12:
-    image: assets/branding/splash_logo_android12.png
-    image_dark: assets/branding/splash_logo_android12.png
-    color: "#0D0D0D"
-    color_dark: "#0D0D0D"
+    # 1152px image; Android 12+ shows only the centre circle, so the logo is padded to fit inside it.
+    image: assets/branding/splash_android12.png
+    image_dark: assets/branding/splash_android12.png
+    color: "#091123"
+    color_dark: "#091123"
   android: true
   ios: true
 
@@ -89,12 +93,9 @@ flutter_native_splash:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/branding/icon.png"
-  # iOS matches the Android adaptive icon: white mark on the brand dark
-  # background. icon_ios.png is icon_foreground.png pre-flattened onto
-  # #0D0D0D — don't use background_color_ios instead, its blending leaves a
-  # green fringe around the mark.
-  image_path_ios: "assets/branding/icon_ios.png"
+  # Purple icon on both platforms: iOS uses icon_purple.png as is (opaque),
+  # Android's adaptive icon is the white mark on the same purple.
+  image_path: "assets/branding/icon_purple.png"
   remove_alpha_ios: true
-  adaptive_icon_background: "#0D0D0D"
+  adaptive_icon_background: "#7C3AED"
   adaptive_icon_foreground: "assets/branding/icon_foreground.png"

@@ -10,6 +10,15 @@ import 'services/purchase_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // System bars match the site's navy so the bottom nav looks continuous.
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Color(0xFF091123),
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Color(0xFF091123),
+    systemNavigationBarIconBrightness: Brightness.light,
+    systemNavigationBarDividerColor: Color(0xFF091123),
+  ));
 
   // Portrait lock (Section 5). Kept here, in one place, so it's easy to
   // relax later (e.g. only for a specific screen) without hunting through

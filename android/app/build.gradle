@@ -1,0 +1,176 @@
+import java.util.Properties
+import org.gradle.api.GradleException
+
+plugins {
+    id "com.android.application"
+    id "org.jetbrains.kotlin.android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode =
+        localProperties.getProperty("flutter.versionCode") ?: "1"
+
+def flutterVersionName =
+        localProperties.getProperty("flutter.versionName") ?: "1.0.0"
+
+// -------------------------------------------------------------------------
+// Release signing
+// -------------------------------------------------------------------------
+
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+def hasKeystoreConfig = keystorePropertiesFile.exists()
+
+if (hasKeystoreConfig) {
+    keystorePropertiesFile.withInputStream { stream ->
+        keystoreProperties.load(stream)
+    }
+}
+
+// -------------------------------------------------------------------------
+// Firebase
+// -------------------------------------------------------------------------
+
+def googleServicesFile = file("google-services.json")
+
+if (googleServicesFile.exists()) {
+    apply plugin: "com.google.gms.google-services"
+} else {
+    logger.warn(
+            "[EliteMeet] google-services.json not found. " +
+                    "Firebase/FCM will not be configured."
+    )
+}
+
+// -------------------------------------------------------------------------
+// Flutter SDK
+// -------------------------------------------------------------------------
+
+def flutterRoot = localProperties.getProperty("flutter.sdk")
+
+if (flutterRoot == null || flutterRoot.trim().isEmpty()) {
+    throw new GradleException(
+            "flutter.sdk not set in android/local.properties."
+    )
+}
+
+// -------------------------------------------------------------------------
+// Android
+// -------------------------------------------------------------------------
+
+android {
+    namespace = "net.elitemeet.app"
+
+    compileSdk = 37
+
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+    }
+
+    defaultConfig {
+        applicationId = "net.elitemeet.app"
+
+        minSdk = flutter.minSdkVersion
+
+        targetSdk = 37
+
+        versionCode = flutterVersionCode.toInteger()
+        versionName = flutterVersionName
+    }
+
+    // ---------------------------------------------------------------------
+    // Signing
+    // ---------------------------------------------------------------------
+
+    signingConfigs {
+        if (hasKeystoreConfig) {
+            release {
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+
+                storeFile = keystoreProperties["storeFile"] ?
+                        file(keystoreProperties["storeFile"]) :
+                        null
+
+                storePassword = keystoreProperties["storePassword"]
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Build types
+    // ---------------------------------------------------------------------
+
+    buildTypes {
+        debug {
+        }
+
+        release {
+            signingConfig = hasKeystoreConfig ?
+                    signingConfigs.release :
+                    signingConfigs.debug
+
+            if (!hasKeystoreConfig) {
+                logger.warn(
+                        "[EliteMeet] No key.properties found. " +
+                                "Release build is using the DEBUG signing key. " +
+                                "This is NOT suitable for Play Store upload."
+                )
+            }
+
+            minifyEnabled true
+            shrinkResources true
+
+            proguardFiles(
+                    getDefaultProguardFile(
+                            "proguard-android-optimize.txt"
+                    ),
+                    "proguard-rules.pro"
+            )
+        }
+    }
+}
+
+// -------------------------------------------------------------------------
+// Flutter
+// -------------------------------------------------------------------------
+
+flutter {
+    source = "../.."
+}
+
+// -------------------------------------------------------------------------
+// Dependencies
+// -------------------------------------------------------------------------
+
+dependencies {
+    implementation platform(
+            "com.google.firebase:firebase-bom:33.1.2"
+    )
+
+    coreLibraryDesugaring(
+            "com.android.tools:desugar_jdk_libs:2.1.5"
+    )
+}

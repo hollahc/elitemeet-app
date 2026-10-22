@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notification accent (the small colored dot/tint behind the status
+         bar notification icon). Placeholder brand gold — replace with the
+         real EliteMeet brand color. See docs/SETUP.md, Section 61. -->
+    <color name="notification_accent">#B8860B</color>
+    <color name="splash_background">#FFFFFFFF</color>
+	<color name="ic_launcher_background">#7C3AED</color>
+</resources>

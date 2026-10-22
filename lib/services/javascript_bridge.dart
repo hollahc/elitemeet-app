@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config/app_config.dart';
@@ -204,6 +207,10 @@ class JavaScriptBridge {
         await _respond(requestId, await CallAudioService.instance.setSpeakerphone(args['on'] == true));
         break;
 
+      case 'signInWithApple':
+        await _respond(requestId, await _signInWithApple());
+        break;
+
       case 'restorePurchases':
         await PurchaseService.instance.restorePurchases();
         await _respond(requestId, true);
@@ -235,13 +242,43 @@ class JavaScriptBridge {
     return 'unknown';
   }
 
+  /// Native Sign in with Apple (iOS). The WebView can't run the web popup
+  /// flow, so the site asks for Apple's ID token here and exchanges it with
+  /// Supabase itself (`signInWithIdToken`). Apple gets the SHA-256 of a
+  /// random nonce; the raw nonce goes back to the site, which Supabase needs
+  /// to verify the token.
+  Future<Map<String, Object?>> _signInWithApple() async {
+    if (!Platform.isIOS) return {'ok': false, 'error': 'unsupported'};
+    final random = Random.secure();
+    final rawNonce = base64Url.encode(List<int>.generate(32, (_) => random.nextInt(256))).replaceAll('=', '');
+    try {
+      final cred = await SignInWithApple.getAppleIDCredential(
+        scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
+      );
+      if (cred.identityToken == null) return {'ok': false, 'error': 'Apple returned no identity token'};
+      return {
+        'ok': true,
+        'idToken': cred.identityToken,
+        'nonce': rawNonce,
+        // Apple only sends the name on the first sign-in for this app.
+        'givenName': cred.givenName,
+        'familyName': cred.familyName,
+      };
+    } on SignInWithAppleAuthorizationException catch (e) {
+      return {'ok': false, 'cancelled': e.code == AuthorizationErrorCode.canceled, 'error': e.message};
+    } catch (e) {
+      return {'ok': false, 'error': e.toString()};
+    }
+  }
+
   /// The injected script defines `window.EliteMeetApp` with promise-based
   /// methods. Each call posts a JSON message to the `EliteMeetNative`
   /// channel and resolves a pending Promise when Flutter calls `_resolve`.
   String _bridgeScript() {
     return '''
 (function () {
-  if (window.EliteMeetApp && window.EliteMeetApp.__version === 1 && window.EliteMeetApp.getVoipToken) return;
+  if (window.EliteMeetApp && window.EliteMeetApp.__version === 1 && window.EliteMeetApp.getVoipToken && window.EliteMeetApp.signInWithApple) return;
 
   var pending = {};
   var counter = 0;
@@ -276,6 +313,7 @@ class JavaScriptBridge {
     callAudio: function (args) { return call('callAudio', args); },
     setSpeakerphone: function (args) { return call('setSpeakerphone', args); },
     openStore: function () { return call('openStore'); },
+    signInWithApple: function () { return call('signInWithApple'); },
 
     _resolve: function (requestId, value) {
       var resolve = pending[requestId];

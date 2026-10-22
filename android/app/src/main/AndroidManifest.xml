@@ -1,0 +1,130 @@
+<?xml
+    version="1.0"
+    encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Core -->
+    <uses-permission
+        android:name="android.permission.INTERNET"/>
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- Push notifications (Android 13+ runtime permission — requested
+         contextually in Dart via NotificationService.requestPermission(),
+         NOT auto-granted just because it's declared here). Section 62. -->
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Geolocation (confirmed in use by elitemeet.net — Section 70).
+         Requested contextually when the website's WebChromeClient
+         geolocation prompt fires, not on app launch. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Camera (Section 22). Declared with required="false" so devices
+         without a camera can still install the app — the website degrades
+         to file-picker-only on those devices. -->
+    <uses-permission
+        android:name="android.permission.CAMERA"/>
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false"/>
+    <!-- Voice & video calls (Agora WebRTC inside the WebView). The WebView's
+         getUserMedia prompt is granted by webview_service.dart only after
+         the user accepts the matching Android runtime permission. -->
+    <uses-permission
+        android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission
+        android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <!-- Route call audio to Bluetooth headsets (Android 12+). -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false"/>
+    <!-- Billing -->
+    <uses-permission
+        android:name="com.android.vending.BILLING"/>
+    <!-- NOTE: broad photo/media permissions (READ_MEDIA_IMAGES) are
+         deliberately NOT declared here — file uploads use the Android
+         Photo Picker (ACTION_PICK_IMAGES, API 33+) via image_picker, which
+         needs no runtime permission. See Section 62 / docs/TESTING.md. -->
+    <application
+        android:label="EliteMeet"
+        android:name="${applicationName}"
+        android:icon="@mipmap/launcher_icon"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Splash screen shown while Flutter initializes (Section 4). -->
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- App Links (Section 27). android:autoVerify requires
+                 https://elitemeet.net/.well-known/assetlinks.json to be
+                 hosted and correctly signed — see docs/DEEP_LINKS.md.
+                 Until that file is live and verified, Android treats
+                 elitemeet.net links as ambiguous (shows a chooser) rather
+                 than opening this app directly. -->
+            <intent-filter
+                android:autoVerify="true">
+                <action
+                    android:name="android.intent.action.VIEW"/>
+                <category
+                    android:name="android.intent.category.DEFAULT"/>
+                <category
+                    android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="elitemeet.net"/>
+            </intent-filter>
+        </activity>
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2"/>
+        <!-- FCM: default notification channel/icon/color (Section 61 —
+             notification icon MUST be a flat white silhouette, not the
+             color logo, or Android renders a white square/blob). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_accent"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="elitemeet_default_channel"/>
+    </application>
+    <!-- Required so url_launcher can query which apps handle tel/mailto/
+         maps/https intents on Android 11+ (package visibility). -->
+    <queries>
+        <intent>
+            <action
+                android:name="android.intent.action.VIEW"/>
+            <data
+                android:scheme="https"/>
+        </intent>
+        <intent>
+            <action
+                android:name="android.intent.action.DIAL"/>
+            <data
+                android:scheme="tel"/>
+        </intent>
+        <intent>
+            <action
+                android:name="android.intent.action.SENDTO"/>
+            <data
+                android:scheme="mailto"/>
+        </intent>
+    </queries>
+</manifest>

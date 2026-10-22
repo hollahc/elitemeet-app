@@ -65,3 +65,6 @@ ServiceDefinitions.json
 Runner/GeneratedPluginRegistrant.*
 # Widget Preview related
 .widget_preview/
+
+# Flutter crash logs
+*.log

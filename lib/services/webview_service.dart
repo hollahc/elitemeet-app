@@ -52,6 +52,8 @@ class WebViewServiceCallbacks {
 class WebViewService {
   late final WebViewController controller;
   late final WebViewServiceCallbacks _callbacks;
+  String? _currentUrl;
+  bool _failedThisLoad = false;
 
   WebViewService({required WebViewServiceCallbacks callbacks}) {
     _callbacks = callbacks;
@@ -85,18 +87,40 @@ class WebViewService {
   void _configure(WebViewServiceCallbacks callbacks) {
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF0D0D0D))
+      ..setBackgroundColor(const Color(0xFF091123))
       ..setUserAgent(_buildUserAgent())
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: callbacks.onProgress,
-          onPageFinished: (_) => callbacks.onPageFinished(),
+          onPageStarted: (url) {
+            _currentUrl = url;
+            _failedThisLoad = false;
+          },
+          // A failed load still "finishes" — with the WebView's own error page.
+          // Don't let that clear our custom error screen.
+          onPageFinished: (_) {
+            if (!_failedThisLoad) callbacks.onPageFinished();
+          },
           onWebResourceError: (error) {
             // Only surface main-frame failures as a full error state; sub-
             // resource failures (a broken image, a blocked tracker) are
             // common and shouldn't take over the screen.
             if (error.isForMainFrame ?? true) {
+              _failedThisLoad = true;
               callbacks.onError(error.description);
+            }
+          },
+          // Server error pages for the page itself (origin restarting, proxy
+          // 5xx, the web server's bare 404 for the home page) are replaced by
+          // our own screen instead of showing the raw response.
+          onHttpError: (error) {
+            final uri = error.request?.uri;
+            final status = error.response?.statusCode ?? 0;
+            if (uri == null || uri.toString() != _currentUrl) return;
+            final isHome = uri.path.isEmpty || uri.path == '/';
+            if (status >= 500 || (status == 404 && isHome)) {
+              _failedThisLoad = true;
+              callbacks.onError('HTTP $status');
             }
           },
           onNavigationRequest: (request) => _handleNavigation(request),

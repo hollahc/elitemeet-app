@@ -18,5 +18,11 @@
 	     "time-sensitive" (call-push.server.ts) so they break through Focus. -->
 	<key>com.apple.developer.usernotifications.time-sensitive</key>
 	<true/>
+	<!-- Native Sign in with Apple (sign_in_with_apple, javascript_bridge.dart).
+	     Needs "Sign In with Apple" ticked on the net.elitemeet.app App ID. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 </dict>
 </plist>

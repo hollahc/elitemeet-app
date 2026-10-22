@@ -296,11 +296,15 @@ class _WebViewScreenState extends State<WebViewScreen> {
   }
 
   Future<void> _retry() async {
-    setState(() {
-      _isLoading = true;
-      _errorDescription = null;
-      _progress = 0;
-    });
+    // Keep the custom error screen up while retrying; it's cleared only when
+    // a load actually succeeds (onPageFinished), so it never flickers to the
+    // WebView's own error page between attempts.
+    if (_errorDescription == null && !_isOffline) {
+      setState(() {
+        _isLoading = true;
+        _progress = 0;
+      });
+    }
     await _service.reload();
   }
 
@@ -344,7 +348,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF0D0D0D),
+        // Same navy as the site's background/bottom nav, so anything showing
+        // around the WebView (e.g. while loading) blends in.
+        backgroundColor: const Color(0xFF091123),
         // Bottom is left to the page: the WebView runs to the screen edge and
         // the site pads its tab bar by the inset sent in _sendBottomInset.
         // Keeping it here left an empty band under the tab bar.
@@ -356,7 +362,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
               if (_isLoading && _errorDescription == null && !_isOffline)
                 AppLoading(progress: _progress),
               if (_errorDescription != null || (_isOffline && !_pageLoaded))
-                ErrorView(onRetry: _retry)
+                ErrorView(onRetry: _retry, offline: _isOffline || !ConnectivityService.instance.isOnline.value)
               else if (_isOffline)
                 const Positioned(
                   top: 0,
