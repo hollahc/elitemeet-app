@@ -40,7 +40,7 @@ class PurchaseRouter {
   Future<bool> routeWebPath(String path) async {
     final config = ProductCatalog.byWebPath(path);
     if (config == null) return false;
-    await PurchaseService.instance.purchase(config.productId);
+    await PurchaseService.instance.purchase(config.storeProductId);
     return true;
   }
 }

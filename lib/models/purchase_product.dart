@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 enum SubscriptionType { monthly, yearly, consumable }
 
 /// Describes one purchasable EliteMeet product, and (optionally) which
@@ -22,11 +24,20 @@ class PurchaseConfiguration {
   /// `window.EliteMeetApp.purchase()` instead.
   final String? webPath;
 
+  /// App Store ID when it differs from [productId] (Apple never lets a
+  /// deleted product ID be reused). Mirrors IOS_PRODUCT_ID_OVERRIDES in the
+  /// website's `src/lib/store-products.ts`.
+  final String? iosProductId;
+
   const PurchaseConfiguration({
     required this.productId,
     required this.type,
     this.webPath,
+    this.iosProductId,
   });
+
+  /// The ID to ask this device's store for.
+  String get storeProductId => Platform.isIOS ? (iosProductId ?? productId) : productId;
 
   bool get isSubscription =>
       type == SubscriptionType.monthly || type == SubscriptionType.yearly;
@@ -43,6 +54,7 @@ class ProductCatalog {
     // elitemeet_<plan code>_monthly|yearly (plan codes from Admin → Plans).
     PurchaseConfiguration(
       productId: 'elitemeet_plus_monthly',
+      iosProductId: 'elitemeet_plus_monthly_ios',
       type: SubscriptionType.monthly,
       webPath: '/premium',
     ),
@@ -75,11 +87,11 @@ class ProductCatalog {
   ];
 
   static Set<String> get allProductIds =>
-      products.map((p) => p.productId).toSet();
+      products.map((p) => p.storeProductId).toSet();
 
   static PurchaseConfiguration? byProductId(String id) {
     for (final p in products) {
-      if (p.productId == id) return p;
+      if (p.productId == id || p.iosProductId == id) return p;
     }
     return null;
   }

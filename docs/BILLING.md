@@ -16,7 +16,7 @@ Prices match the current web prices; set them per country in each console.
 
 | Product ID                  | Name             | Period  | Price  | Grants                  |
 |-----------------------------|------------------|---------|--------|-------------------------|
-| `elitemeet_plus_monthly`    | EliteMeet Plus   | 1 month | $19.99 | plan code `plus`        |
+| `elitemeet_plus_monthly`    | EliteMeet Plus   | 1 month | $19.99 | plan code `plus` (App Store ID: `elitemeet_plus_monthly_ios`, see below) |
 | `elitemeet_gold_monthly`    | EliteMeet Gold   | 1 month | $29.99 | plan code `gold`        |
 | `elitemeet_premium_monthly` | EliteMeet Premium| 1 month | —      | plan code `premium` (only if you create it) |
 | `elitemeet_pro_monthly`     | EliteMeet Pro    | 1 month | —      | plan code `pro` (only if you create it)     |
@@ -115,8 +115,13 @@ Permissions for a new service account can take up to 24h to start working
 ## 4. App Store Connect — products
 
 1. Monetization → Subscriptions → create group **"EliteMeet Membership"**.
-   Add `elitemeet_plus_monthly` and `elitemeet_gold_monthly` (1 month) to that
+   Add `elitemeet_plus_monthly_ios` and `elitemeet_gold_monthly` (1 month) to that
    group. Rank Gold above Plus (upgrade = immediate, downgrade = next renewal).
+   Plus has its own App Store ID because `elitemeet_plus_monthly` was deleted in
+   App Store Connect and Apple never allows a deleted ID to be reused. Google Play
+   keeps `elitemeet_plus_monthly`. The mapping lives in `iosProductId`
+   (lib/models/purchase_product.dart) and `IOS_PRODUCT_ID_OVERRIDES` (website
+   src/lib/store-products.ts); add an entry to both if this happens again.
 2. Monetization → In-App Purchases → Create → type **Consumable** for every
    ID in the consumables table.
 3. For each product: price, localized display name + description, review
