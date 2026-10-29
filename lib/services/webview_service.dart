@@ -230,6 +230,12 @@ class WebViewService {
     final uri = Uri.tryParse(request.url);
     if (uri == null) return NavigationDecision.prevent;
 
+    // Iframes the page creates for itself (Stripe, embeds) also come through
+    // here. Routing them sent hidden third-party frames to the external
+    // browser — the "Stripe page opened at random" bug. Only top-level
+    // navigations are the user going somewhere.
+    if (!request.isMainFrame) return NavigationDecision.navigate;
+
     final action = UrlRouter.classify(uri);
 
     switch (action) {
