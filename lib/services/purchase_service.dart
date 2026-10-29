@@ -5,8 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart' show ReplacementMode;
-import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart' hide kIAPSource;
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart' show SK2Transaction;
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 
 import '../models/purchase_product.dart';
@@ -88,6 +89,10 @@ class PurchaseService {
   /// ignored (startup recovery only cares about unfinished ones).
   bool _silentRestore = false;
 
+  /// Purchases delivered while a user-started restore is running, so the page
+  /// can say "nothing to restore" instead of staying silent.
+  int _restoredCount = 0;
+
   Future<void> initialize() async {
     _available = await _iap.isAvailable();
     if (!_available) {
@@ -109,10 +114,13 @@ class PurchaseService {
 
     await _loadProducts(ProductCatalog.allProductIds);
 
-    // Android: recover purchases that were paid but never acknowledged /
-    // consumed (app killed mid-flow, pending payment that cleared later).
-    // iOS re-delivers unfinished transactions on its own.
-    if (Platform.isAndroid) {
+    // Recover purchases that were paid but never acknowledged / finished
+    // (app killed mid-flow, server verification failed, pending payment that
+    // cleared later). StoreKit only replays unfinished transactions once per
+    // launch and only if we were listening in time, so ask for them directly.
+    if (Platform.isIOS) {
+      await _recoverUnfinishedIos();
+    } else if (Platform.isAndroid) {
       _silentRestore = true;
       await _iap.restorePurchases();
       // Restored results arrive asynchronously on the purchase stream.
@@ -183,16 +191,9 @@ class PurchaseService {
 
     // iOS: StoreKit refuses a new purchase while an earlier one for the same
     // product is still unfinished (paid, waiting on server verification).
-    // Hand that one to the page again instead of failing.
-    if (Platform.isIOS) {
-      final waiting = _pending.values.where((p) => p.purchase.productID == productId).toList();
-      if (waiting.isNotEmpty) {
-        for (final item in waiting) {
-          _verificationRequests.add(item);
-        }
-        return;
-      }
-    }
+    // Hand that one to the page again instead of failing — once the server
+    // grants (or rejects) it, it's finished and the product can be bought again.
+    if (Platform.isIOS && await _resendUnfinishedIos(productId)) return;
 
     try {
       if (Platform.isAndroid) {
@@ -217,9 +218,12 @@ class PurchaseService {
         }
       }
     } on PlatformException catch (e) {
-      fail(e.code == 'storekit_duplicate_product_object'
-          ? 'Your previous purchase of this item is still being completed. Please try again in a moment.'
-          : 'Could not start purchase: ${e.message ?? e.code}');
+      if (e.code == 'storekit_duplicate_product_object') {
+        // Raced with a transaction StoreKit delivered after our check.
+        if (await _resendUnfinishedIos(productId)) return;
+        return fail('Your previous purchase of this item is still being completed. Please try again in a moment.');
+      }
+      fail('Could not start purchase: ${e.message ?? e.code}');
     } catch (e) {
       fail('Could not start purchase: $e');
     }
@@ -244,19 +248,67 @@ class PurchaseService {
     return null;
   }
 
+  /// Queues every unfinished StoreKit transaction we aren't already tracking.
+  Future<void> _recoverUnfinishedIos() async {
+    if (!InAppPurchaseStoreKitPlatform.isStoreKit2Enabled) return;
+    try {
+      for (final t in await SK2Transaction.unfinishedTransactions()) {
+        if (_pending.containsKey(t.id)) continue;
+        _queueForVerification(_detailsFromSk2(t), restored: false);
+      }
+    } catch (e) {
+      debugPrint('[PurchaseService] unfinishedTransactions failed: $e');
+    }
+  }
+
+  /// Re-sends the unfinished transactions for [productId] to the page.
+  /// Returns false when there are none (a new purchase can start).
+  Future<bool> _resendUnfinishedIos(String productId) async {
+    await _recoverUnfinishedIos();
+    final waiting = _pending.values.where((p) => p.purchase.productID == productId).toList();
+    for (final item in waiting) {
+      _verificationRequests.add(item);
+    }
+    return waiting.isNotEmpty;
+  }
+
+  PurchaseDetails _detailsFromSk2(SK2Transaction t) => SK2PurchaseDetails(
+        productID: t.productId,
+        purchaseID: t.id,
+        verificationData: PurchaseVerificationData(
+          localVerificationData: t.jsonRepresentation ?? '',
+          serverVerificationData: t.receiptData ?? '',
+          source: kIAPSource,
+        ),
+        transactionDate: t.purchaseDate,
+        status: PurchaseStatus.purchased,
+        appAccountToken: t.appAccountToken,
+        sk2Transaction: t,
+      );
+
   /// User-visible restore action (required by App Store review). iOS re-runs
   /// StoreKit restore; Android re-queries owned Play purchases. Everything
-  /// found goes back through server verification.
-  Future<void> restorePurchases() async {
-    if (!_available) return;
+  /// found goes back through server verification. Returns 0 when the store
+  /// had nothing to restore for this store account.
+  Future<int> restorePurchases() async {
+    if (!_available) return 0;
     _silentRestore = false;
+    _restoredCount = 0;
+    if (Platform.isIOS) await _recoverUnfinishedIos();
     await _iap.restorePurchases();
+    // Results arrive asynchronously on the purchase stream.
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    return _restoredCount + _pending.length;
   }
 
   /// Called by the website after the server decided on a pending purchase.
   /// [ok] = granted → acknowledge/consume/finish it. Not ok (server rejected
   /// it, e.g. another account's receipt) → iOS finishes it so it stops
   /// re-delivering; Android leaves it unacknowledged so Google refunds it.
+  ///
+  /// iOS always finishes by transaction id: StoreKit 2 reports
+  /// `pendingCompletePurchase == false` for restored transactions, which used
+  /// to leave them unfinished forever and block buying that product again.
   Future<void> finishPurchase(String key, {required bool ok}) async {
     final item = _pending.remove(key);
     if (item == null) return;
@@ -274,7 +326,12 @@ class PurchaseService {
       return;
     }
 
-    if (purchase.pendingCompletePurchase) await _iap.completePurchase(purchase);
+    if (purchase.purchaseID == null) return;
+    try {
+      await _iap.completePurchase(purchase);
+    } catch (e) {
+      debugPrint('[PurchaseService] finish failed for ${purchase.purchaseID}: $e');
+    }
   }
 
   Future<void> _handlePurchaseUpdates(List<PurchaseDetails> purchases) async {
@@ -312,6 +369,7 @@ class PurchaseService {
         case PurchaseStatus.restored:
           final restored = purchase.status == PurchaseStatus.restored;
           if (restored && _silentRestore && !purchase.pendingCompletePurchase) break;
+          if (restored) _restoredCount++;
           _queueForVerification(purchase, restored: restored);
           break;
       }

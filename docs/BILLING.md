@@ -61,8 +61,14 @@ Web page (in app)  buyInApp(productId)
 - Nothing is granted client-side. If verification fails, the store
   transaction stays open: StoreKit re-delivers it, and Google auto-refunds
   unacknowledged purchases after 3 days.
-- On launch, Android re-checks for paid-but-unfinished purchases. iOS
-  re-delivers them automatically.
+- On launch, Android re-checks for paid-but-unfinished purchases; iOS reads
+  `Transaction.unfinished` and queues them. Buying a product that still has an
+  unfinished iOS transaction re-sends that one for verification instead of
+  failing with StoreKit's `storekit_duplicate_product_object`.
+- The page retries transient verification failures with backoff (Apple can
+  take a few seconds to know a brand-new transaction).
+- iOS finishes by transaction id after the server decides, including restored
+  transactions (StoreKit 2 reports `pendingCompletePurchase == false` for them).
 - Renewals, cancellations, refunds and grace periods come from server
   notifications (section 5), not from the app.
 - Android plan switch (Plus → Gold) replaces the old Play subscription with

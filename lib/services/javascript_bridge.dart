@@ -212,8 +212,8 @@ class JavaScriptBridge {
         break;
 
       case 'restorePurchases':
-        await PurchaseService.instance.restorePurchases();
-        await _respond(requestId, true);
+        // Number of store purchases found (0 → nothing to restore).
+        await _respond(requestId, await PurchaseService.instance.restorePurchases());
         break;
 
       case 'openStore':
