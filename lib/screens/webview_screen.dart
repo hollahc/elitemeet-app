@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config/app_config.dart';
@@ -308,12 +309,48 @@ class _WebViewScreenState extends State<WebViewScreen> {
     await _service.reload();
   }
 
+  /// Main tabs. Back on one of these never walks back through every page
+  /// visited before — it asks for a second press and then closes the app.
+  static const _rootPaths = {
+    '/', '/swipe', '/explore', '/matches', '/chat', '/lounges', '/profile',
+    '/notifications', '/settings', '/auth', '/onboarding',
+  };
+
+  DateTime? _lastBackAt;
+
+  bool _isRootPage(String? url) {
+    final uri = url == null ? null : Uri.tryParse(url);
+    if (uri == null) return true;
+    var path = uri.path;
+    if (path.length > 1 && path.endsWith('/')) path = path.substring(0, path.length - 1);
+    return _rootPaths.contains(path.isEmpty ? '/' : path);
+  }
+
   Future<bool> _onWillPop() async {
     // Android back during a call would leave the call page and hang up.
     // Like a phone call, it's ended with the End button instead.
     if (CallAudioService.instance.inCall.value) return false;
-    final handled = await _service.handleBackPress();
-    return !handled; // if the WebView handled it, don't also pop the route
+
+    // Inside a thread, post or profile: one step back to where it was opened from.
+    final url = await _service.controller.currentUrl();
+    if (!_isRootPage(url) && await _service.handleBackPress()) return false;
+
+    // On a main tab: press back twice (within 2s) to exit.
+    final now = DateTime.now();
+    if (_lastBackAt == null || now.difference(_lastBackAt!) > const Duration(seconds: 2)) {
+      _lastBackAt = now;
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text('Press back again to exit'),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ));
+      }
+      return false;
+    }
+    return true;
   }
 
   /// The bottom inset goes to the page as CSS variables (the WebView draws
@@ -341,10 +378,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
         if (didPop) return;
         final shouldPop = await _onWillPop();
         if (shouldPop && mounted) {
-          // Nothing left in WebView history and nothing above this route —
-          // let the platform's normal "press back again to exit" / app-exit
-          // behavior take over rather than force-closing here.
-          Navigator.of(this.context).maybePop();
+          // Second back press on a main tab: close the app (Android). This is
+          // the root route, so maybePop() alone would do nothing.
+          ScaffoldMessenger.of(this.context).hideCurrentSnackBar();
+          await SystemNavigator.pop();
         }
       },
       child: Scaffold(

@@ -88,6 +88,14 @@
                     android:scheme="https"
                     android:host="elitemeet.net"/>
             </intent-filter>
+            <!-- elitemeet://app-signin?th=… — hands a Google / Apple sign-in
+                 done in the phone's browser back to the app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="elitemeet"/>
+            </intent-filter>
         </activity>
         <meta-data
             android:name="flutterEmbedding"

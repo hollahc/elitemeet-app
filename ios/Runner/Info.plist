@@ -67,6 +67,19 @@
 				</array>
 			</dict>
 		</dict>
+		<!-- elitemeet://app-signin?th=… — hands a Google / Apple sign-in done in
+		     Safari back to the app (a Universal Link on the same domain won't). -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>net.elitemeet.app</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>elitemeet</string>
+				</array>
+			</dict>
+		</array>
 		<!-- url_launcher's canLaunchUrl needs these declared on iOS (same
 		     role as <queries> in AndroidManifest.xml). https needs none. -->
 		<key>LSApplicationQueriesSchemes</key>

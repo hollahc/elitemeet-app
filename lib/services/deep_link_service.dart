@@ -52,7 +52,18 @@ class DeepLinkService {
     );
   }
 
+  /// `elitemeet://app-signin?th=…` — the custom scheme the browser uses to
+  /// hand a Google / Apple sign-in back to the app (iOS won't open a
+  /// Universal Link from a page on the same domain) — becomes the same page
+  /// on the site. Any other link is returned unchanged.
+  static Uri normalize(Uri uri) {
+    if (uri.scheme.toLowerCase() != AppConfig.appScheme) return uri;
+    final path = uri.host.isEmpty ? uri.path : '/${uri.host}${uri.path}';
+    return Uri(scheme: 'https', host: AppConfig.internalHost, path: path, query: uri.hasQuery ? uri.query : null);
+  }
+
   void _handle(Uri uri) {
+    uri = normalize(uri);
     if (!isInternalUri(uri)) {
       // A link scoped to this app's App Links/Universal Links config should
       // always be an elitemeet.net URL; if it isn't, don't silently eat it

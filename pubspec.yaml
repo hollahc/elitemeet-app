@@ -1,7 +1,7 @@
 name: elitemeet_app
 description: "EliteMeet native mobile wrapper for elitemeet.net"
 publish_to: 'none'
-version: 1.0.1+11
+version: 1.0.2+12
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -63,6 +63,7 @@ dependencies:
   # crypto hashes the nonce Apple signs into the ID token.
   sign_in_with_apple: ^8.2.0
   crypto: ^3.0.7
+  share_plus: ^13.3.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

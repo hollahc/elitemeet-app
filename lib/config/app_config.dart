@@ -30,6 +30,10 @@ class AppConfig {
   /// android/app/build.gradle and ios/Runner.xcodeproj).
   static const String applicationId = 'net.elitemeet.app';
 
+  /// Custom URL scheme (`elitemeet://…`) the website uses to hand a browser
+  /// sign-in back to the app. Registered in Info.plist and AndroidManifest.
+  static const String appScheme = 'elitemeet';
+
   /// Identifier appended to the WebView user agent so the website can
   /// detect the native app. See docs/WEBVIEW_BRIDGE.md.
   static const String userAgentSuffix = 'EliteMeetApp/1.0';

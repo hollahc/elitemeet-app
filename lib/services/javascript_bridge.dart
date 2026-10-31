@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui' show Rect;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config/app_config.dart';
@@ -216,6 +219,43 @@ class JavaScriptBridge {
         await _respond(requestId, await PurchaseService.instance.restorePurchases());
         break;
 
+      case 'share':
+        // The phone's own share sheet (WhatsApp, Gmail, Telegram, Messages…);
+        // the WebView has no navigator.share. Resolves false when dismissed.
+        final shareUrl = args['url'] as String? ?? '';
+        final shareText = args['text'] as String? ?? '';
+        final shareTitle = args['title'] as String?;
+        try {
+          final result = await SharePlus.instance.share(ShareParams(
+            text: [shareText, shareUrl].where((s) => s.isNotEmpty).join('\n\n'),
+            subject: shareTitle,
+            title: shareTitle,
+            // iPad presents the sheet as a popover and needs an anchor.
+            sharePositionOrigin: const Rect.fromLTWH(0, 0, 1, 1),
+          ));
+          await _respond(requestId, result.status != ShareResultStatus.dismissed);
+        } catch (e) {
+          debugPrint('[JavaScriptBridge] share failed: $e');
+          await _respond(requestId, false);
+        }
+        break;
+
+      case 'openExternal':
+        // Opens a page in the phone's real browser — used for Google sign-in,
+        // which Google doesn't allow inside an app's WebView. The browser
+        // hands the session back through elitemeet://app-signin.
+        final target = Uri.tryParse(args['url'] as String? ?? '');
+        var opened = false;
+        if (target != null && (target.scheme == 'https' || target.scheme == 'http')) {
+          try {
+            opened = await launchUrl(target, mode: LaunchMode.externalApplication);
+          } catch (e) {
+            debugPrint('[JavaScriptBridge] openExternal failed: $e');
+          }
+        }
+        await _respond(requestId, opened);
+        break;
+
       case 'openStore':
         // Handled by the platform's own "open app store listing" intent —
         // routed through url_router / native intent in a later step if
@@ -278,7 +318,7 @@ class JavaScriptBridge {
   String _bridgeScript() {
     return '''
 (function () {
-  if (window.EliteMeetApp && window.EliteMeetApp.__version === 1 && window.EliteMeetApp.getVoipToken && window.EliteMeetApp.signInWithApple) return;
+  if (window.EliteMeetApp && window.EliteMeetApp.__version === 1 && window.EliteMeetApp.getVoipToken && window.EliteMeetApp.signInWithApple && window.EliteMeetApp.openExternal) return;
 
   var pending = {};
   var counter = 0;
@@ -314,6 +354,8 @@ class JavaScriptBridge {
     setSpeakerphone: function (args) { return call('setSpeakerphone', args); },
     openStore: function () { return call('openStore'); },
     signInWithApple: function () { return call('signInWithApple'); },
+    share: function (args) { return call('share', args); },
+    openExternal: function (args) { return call('openExternal', args); },
 
     _resolve: function (requestId, value) {
       var resolve = pending[requestId];
