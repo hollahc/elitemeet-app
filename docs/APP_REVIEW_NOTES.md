@@ -66,7 +66,7 @@ How to reach them:
 - Message Bundle and Unlimited Chat: in a chat, when the free message limit is reached.
 - Verification fee: Profile → Get verified.
 - Restore purchases: Profile → Settings → Restore purchases.
-Terms of Use: https://elitemeet.net/legal/terms. Privacy Policy: https://elitemeet.net/legal/privacy
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/. Terms of Service: https://elitemeet.net/legal/terms. Privacy Policy: https://elitemeet.net/legal/privacy
 
 Contact: support@elitemeet.net
 
