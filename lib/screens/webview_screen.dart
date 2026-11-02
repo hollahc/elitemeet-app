@@ -309,21 +309,23 @@ class _WebViewScreenState extends State<WebViewScreen> {
     await _service.reload();
   }
 
-  /// Main tabs. Back on one of these never walks back through every page
-  /// visited before — it asks for a second press and then closes the app.
-  static const _rootPaths = {
-    '/', '/swipe', '/explore', '/matches', '/chat', '/lounges', '/profile',
-    '/notifications', '/settings', '/auth', '/onboarding',
-  };
-
+  /// Back taps in quick succession (each within 2s of the previous one):
+  ///   1st — back to the previous page, as usual;
+  ///   2nd — "Press back again to exit";
+  ///   3rd — closes the app.
+  /// With no page to go back to, the 1st tap already shows the message.
   DateTime? _lastBackAt;
+  int _backStreak = 0;
 
-  bool _isRootPage(String? url) {
-    final uri = url == null ? null : Uri.tryParse(url);
-    if (uri == null) return true;
-    var path = uri.path;
-    if (path.length > 1 && path.endsWith('/')) path = path.substring(0, path.length - 1);
-    return _rootPaths.contains(path.isEmpty ? '/' : path);
+  void _showExitHint() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(
+        content: Text('Press back again to exit'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ));
   }
 
   Future<bool> _onWillPop() async {
@@ -331,26 +333,22 @@ class _WebViewScreenState extends State<WebViewScreen> {
     // Like a phone call, it's ended with the End button instead.
     if (CallAudioService.instance.inCall.value) return false;
 
-    // Inside a thread, post or profile: one step back to where it was opened from.
-    final url = await _service.controller.currentUrl();
-    if (!_isRootPage(url) && await _service.handleBackPress()) return false;
-
-    // On a main tab: press back twice (within 2s) to exit.
     final now = DateTime.now();
-    if (_lastBackAt == null || now.difference(_lastBackAt!) > const Duration(seconds: 2)) {
-      _lastBackAt = now;
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(const SnackBar(
-            content: Text('Press back again to exit'),
-            duration: Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ));
-      }
+    final quick = _lastBackAt != null && now.difference(_lastBackAt!) <= const Duration(seconds: 2);
+    _lastBackAt = now;
+    _backStreak = quick ? _backStreak + 1 : 1;
+
+    if (_backStreak >= 3) return true; // third quick tap: exit
+    if (_backStreak == 2) {
+      _showExitHint();
       return false;
     }
-    return true;
+    // First tap: go back a page.
+    if (await _service.handleBackPress()) return false;
+    // Nothing to go back to — the next quick tap exits.
+    _backStreak = 2;
+    _showExitHint();
+    return false;
   }
 
   /// The bottom inset goes to the page as CSS variables (the WebView draws
