@@ -75,7 +75,11 @@
                  hosted and correctly signed — see docs/DEEP_LINKS.md.
                  Until that file is live and verified, Android treats
                  elitemeet.net links as ambiguous (shows a chooser) rather
-                 than opening this app directly. -->
+                 than opening this app directly.
+                 Only pages people share or get notified about are claimed.
+                 /auth must stay out: the app opens it in the phone's browser
+                 for Google / Apple sign-in, and claiming it would bounce that
+                 page straight back here and break sign-in. -->
             <intent-filter
                 android:autoVerify="true">
                 <action
@@ -87,6 +91,14 @@
                 <data
                     android:scheme="https"
                     android:host="elitemeet.net"/>
+                <data android:pathPrefix="/lounges"/>
+                <data android:pathPrefix="/u/"/>
+                <data android:pathPrefix="/chat"/>
+                <data android:pathPrefix="/matches"/>
+                <data android:pathPrefix="/swipe"/>
+                <data android:pathPrefix="/explore"/>
+                <data android:pathPrefix="/notifications"/>
+                <data android:pathPrefix="/profile"/>
             </intent-filter>
             <!-- elitemeet://app-signin?th=… — hands a Google / Apple sign-in
                  done in the phone's browser back to the app. -->

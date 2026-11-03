@@ -34,9 +34,23 @@ fingerprint from your own keystore — `keytool -list -v -keystore
 ~/elitemeet-upload-keystore.jks` — but replace it with the Play Console value
 before relying on this in production.)
 
+Upload key SHA-256, for reference (test builds signed locally, not Play
+installs unless Play App Signing is using this same key):
+`EA:0B:25:C8:0B:2A:42:B0:5E:23:73:F2:9D:B5:01:C3:04:11:84:88:DD:B5:A8:5D:04:71:3A:38:27:B1:86:95`
+
 ### 2. Host assetlinks.json
 
-Create this file and host it at exactly:
+**Order matters.** Publish this only after a build whose manifest lists
+specific paths (not `/auth`) is live on Play. Builds up to 1.0.2+13 claim every
+path on the domain, so once the domain verifies, the browser page used for
+Google / Apple sign-in opens back inside the app and sign-in fails there.
+
+The website serves this file from
+`src/routes/[.]well-known/assetlinks[.]json.ts`. Turn it on by adding the Play
+fingerprint to the server's `.env`, then restart the app:
+`ANDROID_APP_SHA256_CERTS=<the fingerprint from step 1>`
+
+It serves this at exactly:
 `https://elitemeet.net/.well-known/assetlinks.json`
 
 ```json

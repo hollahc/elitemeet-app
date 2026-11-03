@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config/app_config.dart';
+import '../services/back_press_policy.dart';
 import '../services/call_audio_service.dart';
 import '../services/callkit_service.dart';
 import '../services/connectivity_service.dart';
@@ -309,13 +310,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
     await _service.reload();
   }
 
-  /// Back taps in quick succession (each within 2s of the previous one):
-  ///   1st — back to the previous page, as usual;
-  ///   2nd — "Press back again to exit";
-  ///   3rd — closes the app.
-  /// With no page to go back to, the 1st tap already shows the message.
-  DateTime? _lastBackAt;
-  int _backStreak = 0;
+  /// One tap goes back a page; a fast double-tap shows "Press back again to
+  /// exit"; one more tap closes the app. See [BackPressPolicy].
+  final BackPressPolicy _backPolicy = BackPressPolicy();
 
   void _showExitHint() {
     if (!mounted) return;
@@ -333,22 +330,19 @@ class _WebViewScreenState extends State<WebViewScreen> {
     // Like a phone call, it's ended with the End button instead.
     if (CallAudioService.instance.inCall.value) return false;
 
-    final now = DateTime.now();
-    final quick = _lastBackAt != null && now.difference(_lastBackAt!) <= const Duration(seconds: 2);
-    _lastBackAt = now;
-    _backStreak = quick ? _backStreak + 1 : 1;
-
-    if (_backStreak >= 3) return true; // third quick tap: exit
-    if (_backStreak == 2) {
-      _showExitHint();
-      return false;
+    switch (_backPolicy.onPress(DateTime.now())) {
+      case BackAction.exit:
+        return true;
+      case BackAction.showExitHint:
+        _showExitHint();
+        return false;
+      case BackAction.goBack:
+        if (await _service.handleBackPress()) return false;
+        // Nothing to go back to — the next tap exits.
+        _backPolicy.noPageToGoBack(DateTime.now());
+        _showExitHint();
+        return false;
     }
-    // First tap: go back a page.
-    if (await _service.handleBackPress()) return false;
-    // Nothing to go back to — the next quick tap exits.
-    _backStreak = 2;
-    _showExitHint();
-    return false;
   }
 
   /// The bottom inset goes to the page as CSS variables (the WebView draws
