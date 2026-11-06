@@ -102,18 +102,11 @@ class CallkitService {
   /// use the sandbox, TestFlight / App Store builds use production.
   static String get voipEnvironment => kReleaseMode ? 'production' : 'sandbox';
 
-  /// Android 14+: full-screen incoming calls need a user-granted permission.
-  /// Asked together with notification permission.
-  static Future<void> ensureFullScreenPermission() async {
-    if (!supported) return;
-    try {
-      if (!await FlutterCallkitIncoming.canUseFullScreenIntent()) {
-        await FlutterCallkitIncoming.requestFullIntentPermission();
-      }
-    } catch (e) {
-      debugPrint('[CallkitService] full-screen permission: $e');
-    }
-  }
+  /// Full-screen incoming calls are off: Play only allows the
+  /// USE_FULL_SCREEN_INTENT permission for calling / alarm apps, so the
+  /// manifest strips it and there's nothing to ask for. Calls ring as a
+  /// heads-up notification instead. Kept so existing callers still compile.
+  static Future<void> ensureFullScreenPermission() async {}
 
   /// Show the native ringing screen for an "incoming_call" push.
   static Future<void> showIncoming(Map<String, dynamic> data) async {
@@ -143,7 +136,8 @@ class CallkitService {
       android: const AndroidParams(
         isCustomNotification: true,
         isShowLogo: false,
-        isShowFullLockedScreen: true,
+        // No USE_FULL_SCREEN_INTENT (Play policy): ring as a heads-up notification.
+        isShowFullLockedScreen: false,
         ringtonePath: 'system_ringtone_default',
         backgroundColor: '#0B0718',
         actionColor: '#22C55E',

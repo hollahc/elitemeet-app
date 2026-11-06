@@ -1,7 +1,16 @@
 <?xml
     version="1.0"
     encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Play's Full-Screen Intent policy only allows this for calling /
+         alarm apps; calling isn't EliteMeet's core purpose (rejected Nov 6).
+         flutter_callkit_incoming and flutter_local_notifications both
+         declare it, so strip it from the merged manifest. Incoming calls
+         still ring as a heads-up notification with Accept / Decline. -->
+    <uses-permission
+        android:name="android.permission.USE_FULL_SCREEN_INTENT"
+        tools:node="remove"/>
     <!-- Core -->
     <uses-permission
         android:name="android.permission.INTERNET"/>
