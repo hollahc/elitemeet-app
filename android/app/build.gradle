@@ -173,4 +173,7 @@ dependencies {
     coreLibraryDesugaring(
             "com.android.tools:desugar_jdk_libs:2.1.5"
     )
+
+    // CallService (ongoing-call foreground service, notifications).
+    implementation "androidx.core:core-ktx:1.13.1"
 }

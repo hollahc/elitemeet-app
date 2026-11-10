@@ -117,6 +117,7 @@
 		<array>
 			<string>remote-notification</string>
 			<string>voip</string>
+			<string>audio</string>
 		</array>
 		<key>FirebaseAppDelegateProxyEnabled</key>
 		<false/>

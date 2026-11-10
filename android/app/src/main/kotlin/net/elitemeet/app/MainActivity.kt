@@ -20,6 +20,8 @@ class MainActivity : FlutterActivity() {
                 "startCallAudio" -> {
                     audio.mode = AudioManager.MODE_IN_COMMUNICATION
                     setSpeaker(audio, call.argument<Boolean>("speaker") ?: false)
+                    // Keeps the microphone on when the screen locks or the app is backgrounded.
+                    CallService.start(this)
                     result.success(true)
                 }
                 "setSpeakerphone" -> {
@@ -29,6 +31,7 @@ class MainActivity : FlutterActivity() {
                 }
                 // Called when the call ends: give audio back to the system.
                 "stopCallAudio" -> {
+                    CallService.stop(this)
                     setSpeaker(audio, false)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) audio.clearCommunicationDevice()
                     audio.mode = AudioManager.MODE_NORMAL

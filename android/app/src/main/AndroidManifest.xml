@@ -43,6 +43,14 @@
         android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission
         android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <!-- Ongoing calls: a microphone foreground service (CallService) keeps
+         the mic working when the screen locks or the app is in the
+         background. Play Console needs a foreground-service declaration
+         for this (App content → Foreground service permissions). -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
     <!-- Route call audio to Bluetooth headsets (Android 12+). -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_CONNECT"/>
@@ -133,6 +141,10 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="elitemeet_default_channel"/>
+        <service
+            android:name=".CallService"
+            android:exported="false"
+            android:foregroundServiceType="microphone"/>
     </application>
     <!-- Required so url_launcher can query which apps handle tel/mailto/
          maps/https intents on Android 11+ (package visibility). -->

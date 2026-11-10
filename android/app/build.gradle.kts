@@ -42,3 +42,8 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // CallService (ongoing-call foreground service, notifications).
+    implementation("androidx.core:core-ktx:1.13.1")
+}
