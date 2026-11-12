@@ -42,6 +42,7 @@ new plan on the website only needs a store product with that ID.
 | `elitemeet_chat_unlimited_7d`   | Unlimited chat — 7 days| $4.99  | unlimited messaging 7 days      |
 | `elitemeet_chat_unlimited_30d`  | Unlimited chat — 30 days| $9.99 | unlimited messaging 30 days     |
 | `elitemeet_verification_fee`    | Verification fee       | $0.99  | unlocks ID verification         |
+| `elitemeet_coins_70` … `elitemeet_coins_17500` | Coin packs (7) | $0.99–$249.99 | coins for gifts; full list in `docs/COINS_AND_GIFTS.md` |
 
 ## How a purchase flows
 
